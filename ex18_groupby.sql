@@ -173,13 +173,120 @@ GROUP BY buseo;					--3. 2번을 통과한 사람들(27명) 대상으로 그룹�
 SELECT
 	buseo,
 	round(avg(basicpay))
-FROM tblinsa								--1.
-GROUP BY buseo								--2.
-HAVING round(avg(basicpay)) >= 1500000;		--3. 
+FROM tblinsa								--1. 60명
+GROUP BY buseo								--2. 60명 
+HAVING round(avg(basicpay)) >= 1500000;		--3. 집합에 대한 조건 > 집게 함수 조건
+
+-- 부서 인원수가 10명이 넘는 부서
+SELECT
+	buseo, count(*)
+FROM tblinsa
+GROUP BY buseo
+HAVING count(*) >= 10;
+
+-- 부서 과장/부장(where) 인원수가 3명이 넘는(having) 결과
+SELECT
+	buseo, count(*)
+FROM tblinsa
+WHERE jikwi IN ('과장','부장')
+GROUP BY buseo
+HAVING count(*)>=3;
 
 
+-- job_id 그룹을 통계
+SELECT 
+	job_id,
+	count(*) AS 인원수,
+	round(avg(salary)) AS 평균급여
+FROM employees
+GROUP BY job_id;
 
 
+-- 시도별 인원수
+SELECT 
+	substr(address, 1, instr(address, ' ')-1) AS 시도,
+	count(*) AS 시도별인원수
+FROM tbladdressbook
+GROUP BY substr(address, 1, instr(address, ' ')-1)
+ORDER BY 시도별인원수;
+
+
+-- 부서별 / 직급별 인원수를 가져오시오.
+-- 1
+SELECT
+	buseo AS 부서명,
+	count(*) AS 총인원,
+	count(decode(jikwi, '부장', 1)) AS 부장,
+	count(decode(jikwi, '과장', 1)) AS 과장,
+	count(decode(jikwi, '대리', 1)) AS 대리,
+	count(decode(jikwi, '사원', 1)) AS 사원
+FROM tblinsa
+GROUP BY buseo;
+
+-- 2
+SELECT
+	buseo AS 부서명,
+	jikwi,
+	count(*) AS 총인원
+FROM tblinsa
+GROUP BY buseo, jikwi
+ORDER BY buseo, jikwi;
+
+
+/*
+rollup()
+- group by의 집계 결과를 좀 더 자세하게 반환한다.
+- 그룹별 중간 통계
+*/
+
+SELECT 
+	buseo,
+	count(*),
+	sum(basicpay),
+	round(avg(basicpay)),
+	max(basicpay),
+	min(basicpay)
+FROM tblinsa
+GROUP BY ROLLUP(buseo);
+
+SELECT 
+	buseo,
+	jikwi,
+	count(*),
+	sum(basicpay),
+	round(avg(basicpay)),
+	max(basicpay),
+	min(basicpay)
+FROM tblinsa
+GROUP BY ROLLUP(buseo, jikwi);
+
+/*
+cube()
+- group by의 집계 결과를 좀 더 자세하게 반환한다.
+- 그룹별 중간 통계
+*/
+SELECT 
+	buseo,
+	count(*),
+	sum(basicpay),
+	round(avg(basicpay)),
+	max(basicpay),
+	min(basicpay)
+FROM tblinsa
+GROUP BY cube(buseo);
+
+SELECT 
+	buseo,
+	count(*),
+	sum(basicpay),
+	round(avg(basicpay)),
+	max(basicpay),
+	min(basicpay)
+FROM tblinsa
+GROUP BY cube(buseo, jikwi);
+
+-- rollup > 다중 그룹 컬럼 > 수직관계(전체인원 총계, 부서별 총계, 마지막 그룹 총계는 없음) 
+-- cube > 다중 그룹 컬럼 > 수평관계(전체인원 총계, 부서별 총계, 직위별 총계)
 
 
 
