@@ -21,8 +21,8 @@ f. , : 천단위 표기
 SELECT
 	weight,
 	to_char(weight),
-	length(weight),		-- 암시적 형변환
-	substr(weight, 1,1),
+	length(weight),			-- 암시적 형변환
+	substr(weight, 1,1),	-- 암시적 형변환
 	weight||'kg'
 FROM tblcomedian;
 
@@ -42,6 +42,8 @@ SELECT
 FROM dual;
 
 SELECT
+	to_char(100, '$999'),
+	to_char(100, 'L999'),
 	1234567.89,
 	to_char(1234567.89, '9,999,999'),
 	ltrim(to_char(567.89, '9,999,999.9')),		--최대길이
@@ -78,8 +80,8 @@ SELECT
 	to_char(sysdate, 'month'),		--월(풀네임)
 	to_char(sysdate, 'mon'),		--월(약어)
 	to_char(sysdate, 'mm'),			--월(2자리)
-	to_char(sysdate, 'day'),		--요일(풀네임)
-	to_char(sysdate, 'dy'),			--요일(약어)
+	to_char(sysdate, 'day'),		--요일(풀네임) : 화요일
+	to_char(sysdate, 'dy'),			--요일(약어) : 화
 	to_char(sysdate, 'ddd'),		-- 일(올해의 며칠)
 	to_char(sysdate, 'dd'),			-- 일(이번달의 며칠)
 	to_char(sysdate, 'd')			-- 일(이번주의 며칠) > 요일(숫자 버전)
@@ -148,9 +150,9 @@ FROM tblinsa
 WHERE to_char(ibsadate, 'yyyy')='2000';
 
 
--- 3. number to_number(문자)
+-- 3. to_number(문자)
 SELECT
-	'123' * 2,
+	'123' * 2,	 --암시적 형변환
 	to_number('123') * 2
 FROM dual;
 

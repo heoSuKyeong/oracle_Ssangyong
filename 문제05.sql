@@ -51,17 +51,14 @@ SELECT
 FROM tblInsa;
 
 -- 7. tblInsa. 남자 직원 가장 나이가 많은 사람이 몇년도 태생? 여자 직원 가장 나이가 어린 사람이 몇년도 태생?
+SELECT *
+FROM tblInsa;
+
 SELECT 
-	CASE 
-		WHEN ssn LIKE '%-1%' THEN '남자'
-	END
-FROM tblInsa;
-
-SELECT decode(ssn, '%-1%', '남자')
-FROM tblInsa;
-
-
-
+	min(decode(substr(ssn, 8, 1), '1', substr(ssn,1,2))) AS 남자,
+	max(decode(substr(ssn, 8, 1), '2', substr(ssn,1,2))) AS 여자
+FROM tblInsa
+GROUP BY substr(ssn, 8, 1);
 
 
 

@@ -2,7 +2,13 @@
 SELECT *
 FROM traffic_accident;
         
-        
+SELECT 
+	trans_type,
+	count(*) AS "총 교통사고 발생 수",
+	sum(death_person_num) AS "총 사망수",
+	sum(death_person_num)/sum(total_acct_num) AS "사건당 평균 사망자 수"
+FROM traffic_accident
+GROUP BY trans_type;
 
 --2. tblZoo. 종류(family)별 평균 다리의 갯수를 가져오시오.
 SELECT *
@@ -28,11 +34,6 @@ SELECT sizeof, family, count(*)
 FROM tblzoo
 GROUP BY sizeof, family
 ORDER BY sizeof, family;
-        
-        
-        
-
-
         
 SELECT *
 FROM tbladdressbook;
@@ -64,16 +65,13 @@ WHERE (instr(email, '_') > 0)
 
 --20. tblAddressBook. '건물주'와 '건물주자제분'들의 거주지가 서울과 지방의 비율이 어떻게 되느냐?
 
-SELECT *
-FROM tbladdressbook
-WHERE job = '건물주자제분';
-
 SELECT 
 	job,
-	hometown,
-	count(*)
-FROM tbladdressbook
-GROUP BY job,hometown
+	count(*),
+	round((SELECT count(*) FROM tbladdressbook b WHERE job = a.job AND hometown = '서울')/count(*)*100)||'%' AS 서울비율,
+	round((SELECT count(*) FROM tbladdressbook b WHERE job = a.job AND hometown != '서울')/count(*)*100)||'%' AS 지방비율
+FROM tbladdressbook a
+GROUP BY job
 HAVING job IN ('건물주','건물주자제분');
 
 

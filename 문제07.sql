@@ -10,8 +10,12 @@ WHERE age >= (SELECT avg(age)
 
 -- employees. 'Munich' 도시에 위치한 부서에 소속된 직원들 명단?
 SELECT *
-FROM employees;
-WHERE ;
+FROM employees e
+	INNER JOIN departments d
+	ON e.department_id = d.department_id
+		INNER JOIN locations l
+		ON d.location_id = l.location_id
+WHERE l.city = 'Munich';
 
 
 -- tblMan. tblWoman. 서로 짝이 있는 사람 중 남자와 여자의 정보를 모두 가져오시오.
@@ -19,32 +23,73 @@ WHERE ;
 --    홍길동         180       70              장도연     177        65
 --    아무개         175       null            이세영     163        null
 --    ..
-SELECT * 
-FROM tblMan;
-
 SELECT 
-	name,
-	height,
-	weight,
-	(SELECT name FROM tblwomen w WHERE m.name = w.couple)
-FROM tblMan m;
-    
+	m.name AS 남자,
+	m.height AS 남자키,
+	m.weight AS 남자몸무게,
+	w.name AS 여자,
+	w.height AS 여자키,
+	w.weight AS 여자몸무게
+FROM tblmen m
+	INNER JOIN tblwomen w
+	ON m.name = w.couple;
+
 
 -- tblAddressBook. 가장 많은 사람들이 가지고 있는 직업은 주로 어느 지역 태생(hometown)인가?
+-- 패스!!!!!!!!!!!!
+SELECT *
+FROM tbladdressbook;
 
-
+SELECT 
+	hometown
+FROM tbladdressbook
+GROUP BY job, hometown
+HAVING count(*) = (SELECT 
+					max(count(*))
+				FROM tbladdressbook
+				GROUP BY job,hometown);
 
 
 -- tblAddressBook. 이메일 도메인들 중 평균 아이디 길이가 가장 긴 이메일 사이트의 도메인은 무엇인가?
+--1. 도메인 그룹
+--2. 도메인 별 아이디 평균 길이 구하기
+--3. 평균 길이 중 가장 긴 도메인 구하기
 
+--regexp_replace(tel, '(\d{3})-(\d{4})-\d{4}', '\1-\2-xxxx')
 
-            
+SELECT *
+FROM tbladdressbook;
+--GROUP BY regexp_replace(email, '(\w)@(\w).(\w)'
+--GROUP BY regexp_substr()
+
+/*
+SELECT 
+	substr(email, instr(email, '@')+1, length(email)-instr(email, '@')-(length(email)-instr(email,'.',-1))-1) AS 도메인,
+	avg(LENGTH(substr(email, 1, instr(email, '@'))
+FROM tbladdressbook
+GROUP BY substr(email, instr(email, '@')+1, length(email)-instr(email, '@')-(length(email)-instr(email,'.',-1))-1);
+
+SELECT 
+	substr(email, instr(email, '@')+1, 5)
+FROM tbladdressbook
+GROUP BY substr(email, instr(email, '@')+1, 5);
+        */    
             
 
 -- tblAddressBook. 평균 나이가 가장 많은 출신(hometown)들이 가지고 있는 직업 중 가장 많은 직업은?
+SELECT
+	hometown
+FROM tbladdressbook
+GROUP BY hometown
+HAVING avg(age) = (SELECT max(avg(age))
+					FROM tbladdressbook
+					GROUP BY hometown);
 
-
-
+SELECT
+	max(count(*))
+FROM tbladdressbook
+WHERE hometown = '광주'
+GROUP BY job;
 
 
 
