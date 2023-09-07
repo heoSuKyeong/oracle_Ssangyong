@@ -467,11 +467,243 @@ drop table tblgugudan;
 create table tblGugudan(
     dan number not null ,
     num number not null ,
-    result number not null,
+    result number not null
 );
+
 -- 외부에서 제약사항 추가하기
 -- 테이블과 제약사항 관리를 따로할 수 있는 장점이 있다.
-alter table tblgugudan add constraint tblgugudan_dan_num_pk primary key(dan, num);
+alter table tblGugudan add constraint tblgugudan_dan_num_pk primary key(dan, num);
+
+select * from tblGugudan;
+
+begin
+    for dan in 2..9 loop
+        for num in 1..9 loop
+            insert into tblGugudan (dan, num, result) values (dan, num, dan*num);
+        end loop;
+    end loop;
+end;
+/
+
+begin
+    --reverse : 반대로
+    for i in reverse 1..10 loop
+        dbms_output.put_line(i);
+    end loop;
+    
+end;
+/
+
+--3. while loop
+declare
+    vnum number := 1;
+begin
+    while vnum <= 10 loop
+        dbms_output.put_line(vnum);
+        vnum := vnum+1;
+    end loop;
+end;
+/
+
+/*
+select 결과셋을 PL/SQL 변수 대입하는 방법
+1. select into
+- 결과셋의 레코드가 1개일 때만 사용이 가능하다.
+
+2. cursor
+- 결과셋의 레코드가 n개일 때 사용한다.
+- 루프 사용
+
+declare
+    변수 선언;
+    커서 선언;  --결과셋을 참조하는 객체
+begin
+    커서 열기;
+        loop
+            데이터 접근(커서를 사용하여 레코드1개씩 접근한다.)
+        end loop;
+    커서 닫기;
+end;
+
+*/
+
+-- ORA-01422: exact fetch returns more than requested number of rows
+-- select 결과셋이 여러개여서 에러가 난다.
+declare
+    vname tblinsa.name%type;
+begin
+    select name into vname from tblInsa;
+    dbms_output.put_line(vname);
+end;
+/
+
+declare
+    cursor vcursor is (select name from tblinsa);   --커서 생성
+    vname tblinsa.name%type;
+begin
+    open vcursor; --커서 열기 실행하면 select 실행된다.
+--        fetch vcursor into vname;  --select into 역할 / 커서가 담아온 정보를 vname에 대입한다.
+--        dbms_output.put_line(vname);
+        
+        loop
+            fetch vcursor into vname;  --select into 역할
+            exit when vcursor%notfound;     -- 커서상태가 notfound 상태이면 종료
+            dbms_output.put_line(vname);
+        end loop;
+    close vcursor;
+end;
+/
+
+-- 기획부 직원 조회
+declare
+    cursor vcursor
+    is
+    select name, jikwi, basicpay from tblinsa where buseo = '기획부';
+    
+    vname tblinsa.name%type;
+    vjikwi tblinsa.jikwi%type;
+    vbasicpay tblinsa.basicpay%type;
+begin
+    open vcursor;
+        loop
+            fetch vcursor into vname, vjikwi, vbasicpay;
+            exit when vcursor%notfound;
+            dbms_output.put_line(vname||' '||vjikwi || ' 급여 ' || vbasicpay ||'원');
+        
+        end loop;
+        
+    close vcursor;
+end;
+/
+
+-- 모든 직원에게 보너스 지급
+-- 부장/과장 basic * 1.5, 대리/사원 basic * 2 지급
+select * from tblbonus;
+
+delete from tblbonus;
+
+declare
+    cursor vcursor
+    is 
+    select num, name, jikwi, basicpay from tblinsa;
+    vnum tblinsa.num%type;
+    vname tblinsa.name%type;
+    vjikwi tblinsa.jikwi%type;
+    vbasicpay tblinsa.basicpay%type;
+    vbonus number;
+begin
+    open vcursor;
+        loop
+            fetch vcursor into vnum, vname, vjikwi, vbasicpay;
+            exit when vcursor%notfound;
+            
+            if vjikwi in ('부장','과장') then
+                vbonus := vbasicpay * 1.5;
+            elsif vjikwi in ('대리','사원') then
+                vbonus := vbasicpay * 2;
+            end if;
+            
+            insert into tblbonus values (seq.nextVal, vnum, vbonus);
+        end loop;
+    
+    close vcursor;
+end;
+/
+
+--커서 탐색
+--1. 커서 + loop > 정석
+--2. 커서 + for loop > 간결
+
+declare
+    cursor vcursor
+    is select * from tblinsa;
+    
+    vrow tblinsa%rowtype;
+/* 
+-- 1. 커서 + loop
+begin
+    open vcursor;
+    loop
+        fetch vcursor into vrow;
+        exit when vcursor%notfound;
+        
+        dbms_output.put_line(vrow.name);
+    end loop;
+    close vcursor;
+end;
+*/
+
+-- 2. 커서 + for loop
+begin
+    for vrow in vcursor loop    --역할 : loop + fetch into + vrow 선언 + exit when
+        
+        dbms_output.put_line(vrow.name);
+    end loop;
+end;
+/
+
+
+-- 예외처리
+-- : 실행부에서(begin~end) 발생하는 예외를 처리하는 블럭
+-- exception 블럭
+declare
+    vname varchar2(5);
+begin
+    dbms_output.put_line('하나');
+    select name into vname from tblinsa where num = 1001;      --에러난 위치에서 중지
+    dbms_output.put_line('둘');
+    dbms_output.put_line(vname);
+exception
+    when others then
+        dbms_output.put_line('예외 처리');
+
+
+end;
+/
+
+-- 예외발생하면 db에 저장
+create table tblLog(
+    seq number primary key,
+    code varchar2(7) not null check (code in ('A001', 'B001', 'B002', 'C001')),     --에러상태
+    message varchar2(1000) not null,        --에러 메시지
+    regdate date default sysdate not null   --에러 발생 시각
+);
+
+create sequence seqLog;
+
+declare
+    vcnt number;
+    vname tblinsa.name%type;
+begin
+    select count(*) into vcnt from tblCountry where name = '태국';
+    dbms_output.put_line(100/vcnt);
+
+    select name into vname from tblinsa where num=1000;
+    dbms_output.put_line(vname);
+    
+exception
+    when zero_divide then
+        dbms_output.put_line('0으로 나누기');
+        insert into tblLog values (seqLog.nextVal, 'B001', '가져온 레코드가 없습니다.', default);
+    when no_data_found then
+        dbms_output.put_line('데이터 없음');
+         insert into tblLog values (seqLog.nextVal, 'A001', '직원이 존재하지 않습니다.', default);
+    when others then
+        dbms_output.put_line('나머지 예외');
+        insert into tblLog values (seqLog.nextVal, 'C001', '기타 예외가 발생했습니다.', default);
+end;
+/
+
+select * from tblLog;
+
+-- 익명 프로시저 끝
+
+-- 실명 프로시저
+
+
+
+
+
 
 
 
