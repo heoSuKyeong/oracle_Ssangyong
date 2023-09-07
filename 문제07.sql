@@ -36,9 +36,6 @@ FROM tblmen m
 
 
 -- tblAddressBook. 가장 많은 사람들이 가지고 있는 직업은 주로 어느 지역 태생(hometown)인가?
--- 패스!!!!!!!!!!!!
-SELECT *
-FROM tbladdressbook;
 
 SELECT 
 	hometown
@@ -77,35 +74,50 @@ GROUP BY substr(email, instr(email, '@')+1, 5);
             
 
 -- tblAddressBook. 평균 나이가 가장 많은 출신(hometown)들이 가지고 있는 직업 중 가장 많은 직업은?
-SELECT
-	hometown
-FROM tbladdressbook
-GROUP BY hometown
-HAVING avg(age) = (SELECT max(avg(age))
-					FROM tbladdressbook
-					GROUP BY hometown);
 
-SELECT
-	max(count(*))
+SELECT job
 FROM tbladdressbook
-WHERE hometown = '광주'
-GROUP BY job;
-
+WHERE hometown = (SELECT hometown FROM tbladdressbook GROUP BY hometown HAVING avg(age) = (SELECT max(avg(age)) FROM tbladdressbook GROUP BY hometown))
+GROUP BY job
+HAVING count(*) = (SELECT max(count(*)) FROM tbladdressbook 
+					WHERE hometown = (SELECT hometown FROM tbladdressbook GROUP BY hometown 
+						HAVING avg(age) = (SELECT max(avg(age)) FROM tbladdressbook GROUP BY hometown))
+					GROUP BY job);
 
 
 -- tblAddressBook. 남자 평균 나이보다 나이가 많은 서울 태생 + 직업을 가지고 있는 사람들을 가져오시오.
-
-
-
-
+SELECT *
+FROM tbladdressbook
+WHERE hometown = '서울' AND job NOT IN ('백수','취업준비생')
+	AND age>=(SELECT avg(age)
+				FROM tbladdressbook
+				WHERE gender = 'm'
+				GROUP BY gender);
 
 
 -- tblAddressBook. 가장 나이가 많으면서 가장 몸무게가 많이 나가는 사람과 같은 직업을 가지는 사람들을 가져오시오.
+-- 어렵
 
+SELECT *
+FROM tbladdressbook
+WHERE job in (SELECT job
+			FROM tbladdressbook
+			WHERE age = (SELECT max(age) FROM tbladdressbook)
+					AND weight = (SELECT max(weight) FROM tbladdressbook));
+			
 
 
 -- tblAddressBook.  동명이인이 여러명 있습니다. 이 중 가장 인원수가 많은 동명이인(모든 이도윤)의 명단을 가져오시오.
-
+SELECT *
+FROM tbladdressbook
+WHERE name = (SELECT 
+					name
+				FROM tbladdressbook
+				GROUP BY name
+				HAVING count(*) = (SELECT 
+										max(count(*)) AS 동명이인
+									FROM tbladdressbook
+									GROUP BY name));
 
 
 
@@ -113,13 +125,19 @@ GROUP BY job;
 --    [10대]       [20대]       [30대]       [40대]
 --    8.7%        30.7%        28.3%        32.2%
 
-
-
-
-
-
-
-
+								
+SELECT 
+	job,
+	round(count(CASE WHEN age BETWEEN 10 AND 19 THEN 1 end)/count(*)*100,2)||'%' AS "[10대]" ,
+	round(count(CASE WHEN age BETWEEN 20 AND 29 THEN 1 end)/count(*)*100,2)||'%' AS "[20대]" ,
+	round(count(CASE WHEN age BETWEEN 30 AND 39 THEN 1 end)/count(*)*100,2)||'%' AS "[30대]" ,
+	round(count(CASE WHEN age BETWEEN 40 AND 49 THEN 1 end)/count(*)*100,2)||'%' AS "[40대]"
+FROM tbladdressbook
+GROUP BY job
+HAVING count(*) = (SELECT 
+						max(count(*))
+					FROM tbladdressbook
+					GROUP BY job);
 
 
 

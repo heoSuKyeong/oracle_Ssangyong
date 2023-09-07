@@ -60,23 +60,38 @@ WHERE st.address NOT IN ('서울시');
     
     
 -- tblCustomer, tblSales. 상품을 2개(단일상품) 이상 구매한 회원의 연락처, 이름, 구매상품명, 수량을 가져오시오.
-SELECT * FROM tblCustomer;
-
-SELECT 
-	c.name,
-	s.item
+SELECT
+	c.name, c.tel, s.item, s.qty 
 FROM TBLCUSTOMER c
-	INNER JOIN TBLSALES s
-    ON c.seq = s.cseq;
+		INNER JOIN TBLSALES s
+	    ON c.seq = s.cseq
+WHERE name IN (SELECT 
+		c.name
+	FROM TBLCUSTOMER c
+		INNER JOIN TBLSALES s
+	    ON c.seq = s.cseq
+	GROUP BY c.name
+	HAVING count(*) >=2)
+ORDER by c.name;
 
-
-SELECT *
-FROM TBLCUSTOMER ;
-
-SELECT *
-FROM TBLSALES ;
                 
 -- tblVideo, tblRent, tblGenre. 모든 비디오 제목, 보유수량, 대여가격을 가져오시오.
+SELECT * FROM tblvideo;
+SELECT * FROM tblRent;
+SELECT * FROM tblGenre;
+
+SELECT 
+	v.name, 
+	nvl((v.qty - r.rentQty),v.qty) AS 보유수량,
+	g.price
+FROM tblvideo v
+	INNER JOIN tblgenre g
+	ON v.genre = g.seq
+		LEFT OUTER JOIN (SELECT video, count(*) AS rentQty
+				FROM tblrent
+				WHERE retdate IS NULL
+				GROUP BY video) r
+			ON v.seq = r.video;
 
                 
 -- tblVideo, tblRent, tblMember, tblGenre. 2022년 2월에 대여된 구매내역을 가져오시오. 회원명, 비디오명, 언제, 대여가격
@@ -151,3 +166,145 @@ SELECT * FROM EMPLOYEES;
     
     
 -- employees. 자신의 매니저보다 먼저 고용된 사원들의 first_name, last_name, 고용일을 가져오시오.
+
+
+
+-- rownum + group by
+
+
+-- 1. tblInsa. 남자 급여(기본급+수당)을 (내림차순)순위대로 가져오시오. (이름, 부서, 직위, 급여, 순위 출력)
+SELECT 
+	*
+FROM (SELECT a.*, (basicpay+sudang) AS 급여, rownum
+		FROM (SELECT *
+			FROM tblinsa
+			WHERE substr(ssn,8,1) = '1'
+			ORDER BY (basicpay+sudang) DESC) a)
+ORDER BY rownum;
+
+
+-- 2. tblInsa. 여자 급여(기본급+수당)을 (오름차순)순위대로 가져오시오. (이름, 부서, 직위, 급여, 순위 출력)
+SELECT 
+	*
+FROM (SELECT a.*, (basicpay+sudang) AS 급여, rownum
+		FROM (SELECT *
+			FROM tblinsa
+			WHERE substr(ssn,8,1) = '2'
+			ORDER BY (basicpay+sudang) DESC) a)
+ORDER BY rownum desc;
+
+-- 3. tblInsa. 여자 인원수가 (가장 많은 부서 및 인원수) 가져오시오.
+SELECT *
+FROM (SELECT a.*, rownum
+	FROM (SELECT 
+			buseo, count(*)
+		FROM tblinsa
+		WHERE substr(ssn,8,1) = '2'
+		GROUP BY buseo
+		ORDER BY count(*) DESC) a)
+WHERE rownum = 1;
+
+
+-- 4. tblInsa. 지역별 인원수 (내림차순)순위를 가져오시오.(city, 인원수)
+SELECT *
+FROM (
+	SELECT a.*, rownum
+	FROM (
+		SELECT city, count(*)
+		FROM tblinsa
+		GROUP BY city
+		ORDER BY count(*) DESC) a)
+WHERE rownum=1;
+
+
+-- 5. tblInsa. 부서별 인원수가 가장 많은 부서 및원수 출력.
+SELECT *
+FROM (
+	SELECT a.*, rownum
+	FROM (
+		SELECT buseo, count(*)
+		FROM tblinsa
+		GROUP BY buseo
+		ORDER BY count(*) DESC) a)
+WHERE rownum=1;
+
+-- 6. tblInsa. 남자 급여(기본급+수당)을 (내림차순) 3~5등까지 가져오시오. (이름, 부서, 직위, 급여, 순위 출력)
+SELECT 
+	name, buseo, jikwi, 급여, rn
+FROM (SELECT a.*, (basicpay+sudang) AS 급여, rownum AS rn
+		FROM (SELECT *
+			FROM tblinsa
+			WHERE substr(ssn,8,1) = '1'
+			ORDER BY (basicpay+sudang) DESC) a)
+WHERE rn BETWEEN 3 AND 5;
+
+-- 7. tblInsa. 입사일이 빠른 순서로 5순위까지만 가져오시오.
+SELECT 
+	*
+FROM (SELECT a.*, rownum AS rn
+		FROM (SELECT *
+			FROM tblinsa
+			ORDER BY ibsadate) a)
+WHERE rownum <=5;
+
+
+-- 8. tblhousekeeping. 지출 내역(가격 * 수량) 중 가장 많은 금액을 지출한 내역 3가지를 가져오시오.
+SELECT * FROM tblhousekeeping;
+
+SELECT 
+	*
+FROM (SELECT a.*, rownum AS rn
+		FROM (SELECT *
+			FROM tblhousekeeping
+			ORDER BY (price*qty) DESC) a)
+WHERE rn <= 3;
+
+-- 9. tblinsa. 평균 급여 2위인 부서에 속한 직원들을 가져오시오.
+SELECT 
+	*
+FROM (SELECT a.*, rownum AS rn
+		FROM (SELECT buseo, round(avg(basicpay+sudang))
+			FROM tblinsa
+			GROUP BY buseo
+			ORDER BY avg(basicpay+sudang) DESC) a)
+WHERE rn = 2;
+
+-- 10. tbltodo. 등록 후 가장 빠르게 완료한 할일을 순서대로 5개 가져오시오.
+
+SELECT 
+	*
+FROM (SELECT a.*, rownum AS rn
+		FROM (SELECT *
+			FROM tbltodo
+			WHERE completedate IS NOT null
+			ORDER BY (completedate-adddate)) a)
+WHERE rn <= 5;
+
+-- 11. tblinsa. 남자 직원 중에서 급여를 3번째로 많이 받는 직원과 9번째로 많이 받는 직원의 급여 차액은 얼마인가?
+SELECT 
+	(SELECT 
+		급여
+	FROM (SELECT a.*, (basicpay+sudang) AS 급여, rownum AS rn
+			FROM (SELECT *
+				FROM tblinsa
+				WHERE substr(ssn,8,1) = '1'
+				ORDER BY (basicpay+sudang) DESC) a)
+	WHERE rn = 3) - 
+	(SELECT 
+		급여
+	FROM (SELECT a.*, (basicpay+sudang) AS 급여, rownum AS rn
+			FROM (SELECT *
+				FROM tblinsa
+				WHERE substr(ssn,8,1) = '1'
+				ORDER BY (basicpay+sudang) DESC) a)
+	WHERE rn = 9) AS 급여차액
+FROM dual;
+
+
+
+
+
+
+
+
+

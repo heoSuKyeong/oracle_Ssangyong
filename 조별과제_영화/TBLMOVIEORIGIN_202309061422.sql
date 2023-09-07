@@ -1,0 +1,5 @@
+INSERT INTO HR.TBLMOVIEORIGIN (MOVIEORIGINSEQ,ORIGINSEQ,SEQ) VALUES
+	 ('1','1','22'),
+	 ('2','2','33'),
+	 ('3','3','34'),
+	 ('4','4','50');

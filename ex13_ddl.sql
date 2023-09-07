@@ -1,4 +1,4 @@
--- ex13_ddl.sql
+  -- ex13_ddl.sql
 
 /*
 ex01~ex12 : DML 기본(기초)
