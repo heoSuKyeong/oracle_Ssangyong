@@ -1162,5 +1162,95 @@ end;
 
 select * from tblstaff;
 
+/*
+
+저장 프로시저
+1. 저장 프로시저
+2. 저장 함수
+
+저장 함수, Stored Function 
+- 저장 프로시저와 99% 동일
+- 반환값이 반드시 존재해야 한다.
+- 반환값은 out 파라미터를 의미하는 것이 아닌 return 문을 의미한다.
+- 함수에서 out 파라미터 사용 금지 대신 return 문 사용한다.
+- in 파라미터는 사용 가능하다.
+- 이런 특성때문에 호출하는 구문이 조금 상이하다.(***)
+
+
+*/
+
+-- num1+num2 프로시저
+create or replace procedure procSum(
+    num1 in number,
+    num2 in number,
+    presult out number
+)
+is 
+begin
+    presult := num1 + num2;
+end procSum;
+/
+
+declare
+    vresult number;
+begin
+    procSum(10,20,vresult);
+    dbms_output.put_line(vresult);
+end;
+/
+
+-- 함수
+create or replace function fnSum(
+    num1 in number,
+    num2 in number
+--    presult out number    //out을 사용하면 함수의 고유 특성이 사라진다.
+) return number     -- return 타입 기재!!!!!
+is
+begin
+    return num1 + num2;
+end fnSum;
+
+declare
+    vresult number;
+begin
+    vresult := fnSum(10,20);
+    dbms_output.put_line(vresult);
+end;
+
+
+-- 프로시저와 함수의 사용 차이점
+-- 프로시저는 PL/SQL 전용으로 일반 SQL문에서 사용하지 못한다. 업무 절차 모듈화
+-- 함수는 ANSI-SQL 보조 역할로 많이 사용한다.
+
+select 
+    name, basicpay, sudang,
+    fnSum(basicpay, sudang) 
+from tblinsa;
+
+-- 주민으로 성별 판단하기
+-- 이름, 부서, 직원, 성별(남자|여자)
+select
+    name, buseo, jikwi,
+    case
+        when substr(ssn, 8, 1) = '1' then '남자'
+        when substr(ssn, 8, 1) = '2' then '여자'
+    end as genger
+from tblinsa;
+
+-- 함수로 구하기
+create or replace function fnGender(pssn varchar2) return varchar2
+is
+begin
+    return case
+                when substr(pssn, 8, 1) = '1' then '남자'
+                when substr(pssn, 8, 1) = '2' then '여자'
+            end;
+end fnGender;
+
+select
+    name, buseo, jikwi,
+    fnGender(ssn) as gender
+from tblinsa;
+
 
 
