@@ -1,0 +1,127 @@
+-- B07-01 
+-- 1. 회사 요구조건에 해당되는 교육생 조회
+-- 연계 회사가 요구하는 과목 및 요구 성적을 만족하는 교육생을 조회하는 경우 조건에 만족하는 교육생을 성적과 출결 정보를 기준으로 내림차순 정렬한다.
+create or replace procedure procRequirementStudent(
+    pcompany varchar2
+)
+is
+begin
+    DBMS_OUTPUT.PUT_LINE('────────────────────── 요구 조건 만족 교육생 정보 ──────────────────────');
+    for company in (
+        
+        SELECT 
+            c.companyname AS 회사명,
+            t.subjectname AS 회사요구과목,
+            r.score AS 회사요구성적,
+            s.studentname AS 교육생이름,
+            (ts.attendancescore+ts.writtenscore+ts.practicalscore) AS 교육생성적
+        FROM TBLCOMPANY c
+            INNER JOIN tblrequirement r
+            ON c.companynum = r.companynum
+                INNER JOIN tblsubject t
+                    on t.subjectnum = r.subjectnum
+                        INNER JOIN tblsubjectdetail sd
+                            ON sd.subjectnum = r.subjectnum
+                                INNER JOIN tbltest test
+                                    ON test.subjectdetailnum = sd.subjectdetailnum
+                                        INNER JOIN tbltestscore ts
+                                            ON ts.testnum = test.testnum
+                                                INNER JOIN vwstudent s
+                                                    ON s.studentNum = ts.studentnum
+        WHERE c.COMPANYNAME = pcompany AND (ts.attendancescore+ts.writtenscore+ts.practicalscore) >= r.score
+        ORDER BY 교육생성적 desc
+    
+    )
+    loop
+    --회사 정보 출력
+    DBMS_OUTPUT.PUT_LINE('회사명: ' || company.회사명);
+    DBMS_OUTPUT.PUT_LINE('회사요구과목: ' || company.회사요구과목);
+    DBMS_OUTPUT.PUT_LINE('회사요구성적: ' || company.회사요구성적);
+    DBMS_OUTPUT.PUT_LINE('교육생이름: ' || company.교육생이름);
+    DBMS_OUTPUT.PUT_LINE('교육생성적: ' || company.교육생성적);
+    DBMS_OUTPUT.PUT_LINE('──────────────────────────────────────────────────────────────');
+    end loop;
+exception
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('요구 조건 만족 교육생 정보 조회 실패했습니다.');
+end procRequirementStudent;
+/
+
+
+declare
+    vcompany tblcompany.companyname%type := '노스스타컨설팅';
+begin
+    procRequirementStudent(vcompany);
+end;
+/
+
+
+-- C09-01
+-- 2. 비품 수리 신청
+-- 교사는 비품에 대해 교체 신청 사유를 기재하여 교체 신청을 할 수 있다.
+
+create or replace procedure procApplyChangeItem(
+    pitemDetailNum varchar2,
+    pitemChangeReason varchar,
+    presult out varchar2
+)
+is
+begin
+    INSERT INTO tblitemChange (itemChangeNum, itemDetailNum, itemChangeReason, isReplacement, itemChangeDate)
+			VALUES ((select nvl(max(lpad(itemChangeNum, 5, '0')), 0) + 1 from tblitemChange), pitemDetailNum, pitemChangeReason, 0, sysdate);
+    presult := '비품 교체 신청 등록 성공했습니다.';   -- 성공
+exception
+    when others then
+        presult := '비품 교체 신청 등록 실패했습니다.';   -- 실패    
+end procApplyChangeItem; 
+/
+
+declare
+    vresult varchar2(100);
+begin
+    procApplyChangeItem('806', '허수경 뿌심', vresult);
+    dbms_output.put_line(vresult);
+end;
+/
+
+
+-- D03-01
+-- 3. 교육생 출입카드 재발급 신청 > 수료 및 탈락 교육생은 신청이 안됨.
+-- 본인에게 배부된 출입카드를 분실하였을 경우, 분실사유를 기재하여 새 출입카드를 신청한다.
+create or replace procedure procCardReissue(
+    pstudentNum varchar2,
+    preissueReason varchar,
+    presult out varchar2
+)
+is
+    pcount number;
+begin
+
+    SELECT count(*) into pcount FROM tblComplete WHERE studentnum = pstudentNum;
+    
+    if pcount > 0 then
+        raise_application_error(-20001, '수료한 학생은 신청이 불가합니다.');
+    end if;
+    
+    SELECT count(*) into pcount FROM tblfail WHERE studentnum = pstudentNum;
+    if pcount > 0 then
+        raise_application_error(-20001, '탈락한 학생은 신청이 불가합니다.');
+    end if;
+    
+    INSERT INTO tblAccessCardReissue (accessCardReissueNum, studentNum, isReissue, reissueReason)
+			VALUES ((select nvl(max(lpad(accessCardReissueNum, 5, '0')), 0) + 1 from tblAccessCardReissue), pstudentNum, 0, preissueReason);
+
+    presult := '출입카드 재발급 신청 등록 성공했습니다.';   -- 성공
+exception
+    when others then
+        presult := '출입카드 재발급 신청 등록 실패했습니다.';   -- 실패    
+end procCardReissue; 
+/
+
+declare
+    vresult varchar2(100);
+begin
+    procCardReissue('486', '허수경 뿌심', vresult);
+    dbms_output.put_line(vresult);
+end;
+/

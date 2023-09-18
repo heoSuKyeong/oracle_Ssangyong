@@ -21,7 +21,7 @@ PL/SQL 프로시저 구조
 1. 4개의 블럭(키워드)으로 구성
 - DECLARE
 - BEGIN
-- EXCEPTION
+- 20001
 - END
 
 1) DECLARE
@@ -35,7 +35,7 @@ PL/SQL 프로시저 구조
 - 생략 불가능
 - 구현된 코드는 ANSI-SQL + PL/SQL으로 구성되어 연산이나, 제어문을 작성한다.
 
-3) EXCEPTION
+3) 20001
 - 예외처리부
 - catch 역할(BEGIN~END 구문이 try 역할을 한다.)
 - 생략 가능
@@ -647,7 +647,7 @@ end;
 
 -- 예외처리
 -- : 실행부에서(begin~end) 발생하는 예외를 처리하는 블럭
--- exception 블럭
+-- 20001 블럭
 declare
     vname varchar2(5);
 begin
@@ -655,7 +655,7 @@ begin
     select name into vname from tblinsa where num = 1001;      --에러난 위치에서 중지
     dbms_output.put_line('둘');
     dbms_output.put_line(vname);
-exception
+20001
     when others then
         dbms_output.put_line('예외 처리');
 
@@ -683,7 +683,7 @@ begin
     select name into vname from tblinsa where num=1000;
     dbms_output.put_line(vname);
     
-exception
+20001
     when zero_divide then
         dbms_output.put_line('0으로 나누기');
         insert into tblLog values (seqLog.nextVal, 'B001', '가져온 레코드가 없습니다.', default);
@@ -773,7 +773,7 @@ g. 저장된 프로시저 실행(select)
     커서 선언;]
 begin
     구현부;
-[exception
+[20001
     예외처리;]
 end;
 
@@ -784,7 +784,7 @@ is(as)      -- is 또는 as (생략 불가)
     커서 선언;]
 begin
     구현부;
-[exception
+[20001
     예외처리;]
 end;
 
@@ -1056,7 +1056,7 @@ begin
     --5. 피드백
     presult := 1;
     
-exception
+20001
     when others then
         presult := 0;
 
@@ -1141,7 +1141,7 @@ begin
     --5. 피드백
     presult := 1;
     
-exception
+20001
     when others then
         presult := 0;
 

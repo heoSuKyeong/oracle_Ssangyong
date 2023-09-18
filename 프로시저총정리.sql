@@ -270,7 +270,7 @@ begin
         fetch vcursor into vrow;
         exit when vcursor%notfound;
         
-        dbms_output.put_line(vrow.title ||', '||vrow.completedate);
+        dbms_output.put_line(vrow);
         
     end loop;
 end;
